@@ -19,8 +19,8 @@ h2{font-size:15px;margin:0 0 12px;font-weight:600}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .stat{flex:1 1 90px;background:var(--chip);border-radius:8px;padding:8px 10px}
 .stat b{display:block;font:500 20px "IBM Plex Mono",monospace}.stat span{color:var(--mute);font-size:12px}
-input,select,button{font:inherit;color:inherit}
-input,select{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:var(--card)}
+input,select,button,textarea{font:inherit;color:inherit}
+input,select,textarea{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:var(--card)}
 .tools{display:flex;gap:8px;margin-bottom:10px}
 button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:7px;padding:8px 12px}
 button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
@@ -64,10 +64,11 @@ ul{margin:0;padding:0}li{display:grid;grid-template-columns:90px 1fr auto;gap:8p
 <div id="lmsg" class="msg err"></div></div>
 <div class="card" id="formCard" style="display:none"><h2 id="fh">Record an entry</h2>
 <form id="f">
-<div class="full" id="typeRow"><label>Type</label><div class="seg"><button type="button" id="tUse" class="on">Day off used</button><button type="button" id="tEarn">Day off earned</button></div></div>
+<div class="full" id="typeRow"><label>Type</label><div class="seg"><button type="button" id="tUse" class="on">Day off used</button><button type="button" id="tEarn">Day off earned</button><button type="button" id="tPast">Past use (already counted)</button></div></div>
 <div class="full" id="stRow"><label for="st">Staff</label><select id="st"></select></div>
-<div><label for="dt">Date</label><input id="dt" type="date" required></div>
-<div><label for="dy">Days</label><input id="dy" type="number" step="0.5" min="0.5" value="1" required></div>
+<div id="dtRow"><label for="dt">Date</label><input id="dt" type="date" required></div>
+<div id="dyRow"><label for="dy">Days</label><input id="dy" type="number" step="0.5" min="0.5" value="1" required></div>
+<div class="full" id="bulkRow" style="display:none"><label for="bk">Each day used, one per line. Add :0.5 for a half day and | reason if a day has its own reason.</label><textarea id="bk" rows="6" placeholder="2025-12-02&#10;15/01/2026 | Eid Al Fitr&#10;2026-03-10:0.5"></textarea></div>
 <div class="full"><label for="rs" id="rsl">Why it was used</label><input id="rs" placeholder="e.g. Eid Al Adha day off" required></div>
 <div class="full" id="byRow"><label for="by">Approved by</label><input id="by" placeholder="Name"></div>
 <div class="full"><button class="pri" type="submit" id="sub">Save entry</button> <span id="fmsg" class="msg"></span></div>
@@ -99,18 +100,20 @@ function today(){return new Date().toISOString().slice(0,10)}
 function fail(e){$("note").className="msg err";$("note").textContent="Could not save: "+(e&&e.message||"try again")}
 function sha(s){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
 function bal(id){var s=staff[id],e=+s.openEarned||0,u=+s.openUsed||0;
-Object.keys(log).forEach(function(k){var l=log[k];if(l.staff!==id)return;if(l.type==="earn")e+=+l.days||0;else u+=+l.days||0});
+Object.keys(log).forEach(function(k){var l=log[k];if(l.staff!==id)return;if(l.type==="earn")e+=+l.days||0;else if(l.type==="use")u+=+l.days||0});
 return {e:e,u:u,l:e-u}}
 function matchStaff(){var v=($("un").value||"").trim().toLowerCase();if(!v)return null;var f=null;Object.keys(staff).forEach(function(id){if(staff[id].name.toLowerCase()===v)f=id});return f}
 function layout(){
+var past=isOwner&&type==="past";
+$("bulkRow").style.display=past?"":"none";$("dtRow").style.display=past?"none":"";$("dyRow").style.display=past?"none":"";$("dt").required=!past;$("dy").required=!past;$("rs").required=!past;
 var main=isOwner||me;
 $("balCard").style.display=isOwner?"":"none";
 $("loginCard").style.display=(!isOwner&&!me)?"":"none";
 ["formCard","reqCard","histCard"].forEach(function(x){$(x).style.display=main?"":"none"});
 ["typeRow","stRow","byRow"].forEach(function(x){$(x).style.display=isOwner?"":"none"});
 $("fh").textContent=isOwner?"Record an entry":"Apply for a pending off";
-$("sub").textContent=isOwner?"Save entry":"Apply for pending off";
-$("rsl").textContent=isOwner&&type==="use"?"Why it was used":isOwner?"Holiday worked / why earned":"Reason for the day off";
+$("sub").textContent=isOwner?(past?"Save past days":"Save entry"):"Apply for pending off";
+$("rsl").textContent=past?"Default reason (for lines without their own)":isOwner&&type==="use"?"Why it was used":isOwner?"Holiday worked / why earned":"Reason for the day off";
 $("logout").style.display=(!isOwner&&me)?"":"none";
 $("ownerLink").textContent=isOwner?"Sign out":"Owner sign in";
 document.querySelector("main").style.gridTemplateColumns=isOwner?"":"minmax(0,560px)";
@@ -134,10 +137,10 @@ var b=bal(sel),items=Object.keys(log).filter(function(k){return log[k].staff===s
 $("hh").textContent=staff[sel].name+" \u2014 "+fmt(b.l)+" left";
 $("mine").style.display="";$("mE").textContent=fmt(b.e);$("mU").textContent=fmt(b.u);$("mL").textContent=fmt(b.l);
 $("codeBtn").style.display=isOwner?"":"none";$("codeBtn").textContent=staff[sel].codeHash?"Change or remove code":"Set private code";
-var h='';
-if(+staff[sel].openUsed)h+='<li><span class="tag">Before log</span><span>Used '+fmt(+staff[sel].openUsed)+' days (dates not recorded)</span><span></span></li>';
+var h='',pastSum=0;items.forEach(function(k){if(log[k].type==="past")pastSum+=+log[k].days||0});var rest=(+staff[sel].openUsed||0)-pastSum;
+if(+staff[sel].openUsed)h+='<li><span class="tag">Before log</span><span>Used '+fmt(+staff[sel].openUsed)+' days before this log. Itemised below: '+fmt(pastSum)+(rest>0?'. Not yet itemised: '+fmt(rest):rest<0?'. Itemised is more than this total by '+fmt(-rest):'. All itemised.')+(staff[sel].openNote?'<br><span class="sub">Comment: '+esc(staff[sel].openNote)+'</span>':'')+'</span>'+(isOwner?'<button class="link" data-cmo="1">Comment</button>':'<span></span>')+'</li>';
 items.forEach(function(k){var l=log[k];
-h+='<li><span class="tag">'+esc(l.date)+'</span><span>'+(l.type==="earn"?'Earned ':'Used ')+fmt(+l.days)+' day'+(+l.days===1?'':'s')+' \u2014 '+esc(l.reason)+(l.by?' <span class="sub">(approved by '+esc(l.by)+')</span>':'')+'</span>'+(isOwner?'<button class="link" data-del="'+esc(k)+'">Delete</button>':'<span></span>')+'</li>'});
+h+='<li><span class="tag">'+esc(l.date)+'</span><span>'+(l.type==="earn"?'Earned ':'Used ')+fmt(+l.days)+' day'+(+l.days===1?'':'s')+' \u2014 '+esc(l.reason)+(l.type==="past"?' <span class="sub">(already in opening total)</span>':'')+(l.by?' <span class="sub">(approved by '+esc(l.by)+')</span>':'')+(l.comment?'<br><span class="sub">Comment: '+esc(l.comment)+'</span>':'')+'</span>'+(isOwner?'<span><button class="link" data-cm="'+esc(k)+'">Comment</button><button class="link" data-del="'+esc(k)+'">Delete</button></span>':'<span></span>')+'</li>'});
 $("hist").innerHTML=h;$("hmsg").style.display=h?"none":"";if(!h)$("hmsg").textContent="No entries yet."}
 function reqList(){var h="";
 if(isOwner){Object.keys(reqs).forEach(function(u){(reqs[u]||[]).forEach(function(r){if(r.status!=="pending"||!staff[r.staff])return;
@@ -163,7 +166,7 @@ $("oBtn").onclick=function(){$("omsg").textContent="";auth.signInWithEmailAndPas
 $("rows").addEventListener("click",function(e){var r=e.target.closest("tr");if(!r)return;sel=r.dataset.id;$("st").value=sel;render()});
 $("q").addEventListener("input",render);
 $("st").addEventListener("change",function(){if(isOwner){sel=$("st").value;render()}});
-$("hist").addEventListener("click",function(e){var k=e.target.getAttribute("data-del");if(!k||!isOwner)return;if(confirm("Delete this entry?"))db.collection("log").doc(k).delete().catch(fail)});
+$("hist").addEventListener("click",function(e){if(!isOwner)return;var cm=e.target.getAttribute("data-cm");if(cm){var c=prompt("Comment for this entry (leave empty to remove)",log[cm].comment||"");if(c!==null)db.collection("log").doc(cm).set({comment:c.trim()},{merge:true}).catch(fail);return}if(e.target.getAttribute("data-cmo")){var o=prompt("Comment on the days used before this log (leave empty to remove)",staff[sel].openNote||"");if(o!==null)db.collection("staff").doc(sel).set({openNote:o.trim()},{merge:true}).catch(fail);return}var k=e.target.getAttribute("data-del");if(!k)return;if(confirm("Delete this entry?"))db.collection("log").doc(k).delete().catch(fail)});
 $("reqList").addEventListener("click",function(e){var a=e.target.getAttribute("data-act");if(!a||!isOwner)return;
 var u=e.target.getAttribute("data-u"),id=e.target.getAttribute("data-r"),items=reqs[u]||[],r=items.filter(function(x){return x.id===id})[0];if(!r)return;
 var next=items.map(function(x){return x.id===id?Object.assign({},x,{status:a==="ok"?"approved":"declined"}):x});
@@ -177,8 +180,8 @@ db.collection("staff").add({name:n,openEarned:o,openUsed:u}).catch(fail)};
 $("codeBtn").onclick=function(){if(!isOwner||!sel)return;var c=prompt("Private code for "+staff[sel].name+". Leave empty to remove it.","");if(c===null)return;c=c.trim();
 var p=c?sha(sel+":"+c):Promise.resolve(null);
 p.then(function(h){return db.collection("staff").doc(sel).set({codeHash:h},{merge:true})}).catch(fail)};
-function setType(t){type=t;$("tUse").classList.toggle("on",t==="use");$("tEarn").classList.toggle("on",t==="earn");layout()}
-$("tUse").onclick=function(){setType("use")};$("tEarn").onclick=function(){setType("earn")};
+function setType(t){type=t;$("tUse").classList.toggle("on",t==="use");$("tEarn").classList.toggle("on",t==="earn");$("tPast").classList.toggle("on",t==="past");layout()}
+$("tUse").onclick=function(){setType("use")};$("tEarn").onclick=function(){setType("earn")};$("tPast").onclick=function(){setType("past")};
 function enter(id){me=id;$("lmsg").textContent="";sel=id;render()}
 function login(){var id=matchStaff(),bad="Username or code not correct.";if(!id){$("lmsg").textContent=bad;return}
 var want=staff[id].codeHash;
@@ -188,7 +191,9 @@ $("loginBtn").onclick=login;
 [$("un"),$("pc")].forEach(function(i){i.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();login()}})});
 $("logout").onclick=function(){me=null;sel=null;$("un").value="";$("pc").value="";render()};
 $("f").addEventListener("submit",function(e){e.preventDefault();
-var days=parseFloat($("dy").value),date=$("dt").value,reason=$("rs").value.trim();
+var reason=$("rs").value.trim();
+if(isOwner&&type==="past"){pastSave(reason);return}
+var days=parseFloat($("dy").value),date=$("dt").value;
 if(!date||!(days>0)||!reason)return;
 var ok=function(){$("rs").value="";$("fmsg").textContent=isOwner?"Saved.":"Request sent for approval.";setTimeout(function(){$("fmsg").textContent=""},3000)};
 if(isOwner){var s=$("st").value;if(!s)return;
@@ -198,6 +203,15 @@ if(!me)return;
 if(days>bal(me).l&&!confirm("This is more than your balance left. Apply anyway?"))return;
 var rec={id:Date.now().toString(36),staff:me,date:date,days:days,reason:reason,status:"pending"};
 db.doc("requests/"+uid).set({items:(reqs[uid]||[]).concat([rec])}).then(ok).catch(fail)});
+function iso(t){if(/^\d{4}-\d{2}-\d{2}$/.test(t))return t;var m=/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/.exec(t);if(!m||+m[2]>12||+m[1]>31||+m[1]<1)return null;return m[3]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[1]).slice(-2)}
+function pastSave(reason){var s=$("st").value;if(!s)return;
+var lines=$("bk").value.split(/\n/).map(function(x){return x.trim()}).filter(Boolean),b=db.batch(),bad=[],n=0,fm=$("fmsg");
+lines.forEach(function(ln){var q=ln.split("|"),p=q[0].split(":"),d=iso(p[0].trim()),dy=p[1]?parseFloat(p[1]):1,r=(q[1]||"").trim()||reason;
+if(!d||!(dy>0)||!r){bad.push(ln);return}
+b.set(db.collection("log").doc(),{staff:s,type:"past",date:d,days:dy,reason:r,by:""});n++});
+if(bad.length){fm.className="msg err";fm.textContent="Check these lines (date or reason missing): "+bad.join(" ; ");return}
+if(!n){fm.className="msg err";fm.textContent="Enter at least one date.";return}
+b.commit().then(function(){sel=s;$("bk").value="";fm.className="msg";fm.textContent=n+" past day"+(n===1?"":"s")+" saved.";setTimeout(function(){fm.textContent=""},4000)}).catch(fail)}
 $("dt").value=today();
 })();
 </script>
