@@ -76,7 +76,7 @@ ul{margin:0;padding:0}li{display:grid;grid-template-columns:90px 1fr auto;gap:8p
 <div class="card" id="reqCard" style="display:none"><h2 id="reqH">Requests</h2><ul id="reqList"></ul><div id="reqMsg" class="msg"></div></div>
 <div class="card" id="histCard" style="display:none">
 <div class="stats" id="mine" style="display:none"><div class="stat"><b id="mE">0</b><span>Earned</span></div><div class="stat"><b id="mU">0</b><span>Used</span></div><div class="stat"><b id="mL">0</b><span>Pending left</span></div></div>
-<div class="hd"><h2 id="hh">History</h2><span><button class="link" id="codeBtn" style="display:none">Set private code</button><button class="link" id="logout" style="display:none">Log out</button></span></div>
+<div class="hd"><h2 id="hh">History</h2><span><button class="link" id="renBtn" style="display:none">Rename</button><button class="link" id="delBtn" style="display:none">Delete staff</button><button class="link" id="codeBtn" style="display:none">Set private code</button><button class="link" id="logout" style="display:none">Log out</button></span></div>
 <ul id="hist"></ul><div id="hmsg" class="msg">Select a staff member to see their history.</div></div>
 <div id="note" class="msg"></div>
 </section>
@@ -132,11 +132,11 @@ $("seedBox").innerHTML=(isOwner&&!ids.length)?'No staff yet. <button class="pri"
 if(!isOwner)sel=me;
 layout();reqList();history_()}
 function history_(){
-if(!sel||!staff[sel]){$("mine").style.display="none";$("codeBtn").style.display="none";$("hh").textContent="History";$("hist").innerHTML="";$("hmsg").style.display="";return}
+if(!sel||!staff[sel]){$("mine").style.display="none";$("codeBtn").style.display="none";$("renBtn").style.display="none";$("delBtn").style.display="none";$("hh").textContent="History";$("hist").innerHTML="";$("hmsg").style.display="";return}
 var b=bal(sel),items=Object.keys(log).filter(function(k){return log[k].staff===sel}).sort(function(a,c){return (log[c].date||"").localeCompare(log[a].date||"")});
 $("hh").textContent=staff[sel].name+" \u2014 "+fmt(b.l)+" left";
 $("mine").style.display="";$("mE").textContent=fmt(b.e);$("mU").textContent=fmt(b.u);$("mL").textContent=fmt(b.l);
-$("codeBtn").style.display=isOwner?"":"none";$("codeBtn").textContent=staff[sel].codeHash?"Change or remove code":"Set private code";
+$("renBtn").style.display=isOwner?"":"none";$("delBtn").style.display=isOwner?"":"none";$("codeBtn").style.display=isOwner?"":"none";$("codeBtn").textContent=staff[sel].codeHash?"Change or remove code":"Set private code";
 var h='',pastSum=0;items.forEach(function(k){if(log[k].type==="past")pastSum+=+log[k].days||0});var rest=(+staff[sel].openUsed||0)-pastSum;
 if(+staff[sel].openUsed)h+='<li><span class="tag">Before log</span><span>Used '+fmt(+staff[sel].openUsed)+' days before this log. Itemised below: '+fmt(pastSum)+(rest>0?'. Not yet itemised: '+fmt(rest):rest<0?'. Itemised is more than this total by '+fmt(-rest):'. All itemised.')+(staff[sel].openNote?'<br><span class="sub">Comment: '+esc(staff[sel].openNote)+'</span>':'')+'</span>'+(isOwner?'<button class="link" data-cmo="1">Comment</button>':'<span></span>')+'</li>';
 items.forEach(function(k){var l=log[k];
@@ -177,6 +177,14 @@ var b=db.batch();SEED.forEach(function(s){b.set(db.collection("staff").doc(s[0].
 $("addStaff").onclick=function(){if(!isOwner)return;var n=(prompt("Staff name")||"").trim();if(!n)return;
 var o=parseFloat(prompt("Days earned so far (opening balance)","0"))||0,u=parseFloat(prompt("Days already used","0"))||0;
 db.collection("staff").add({name:n,openEarned:o,openUsed:u}).catch(fail)};
+$("renBtn").onclick=function(){if(!isOwner||!sel)return;var n=(prompt("New name for "+staff[sel].name,staff[sel].name)||"").trim();if(!n||n===staff[sel].name)return;
+var dup=Object.keys(staff).some(function(id){return id!==sel&&staff[id].name.toLowerCase()===n.toLowerCase()});
+if(dup){alert("Another staff member already has that name.");return}
+db.collection("staff").doc(sel).set({name:n},{merge:true}).catch(fail)};
+$("delBtn").onclick=function(){if(!isOwner||!sel)return;var id=sel,ks=Object.keys(log).filter(function(k){return log[k].staff===id});
+if(!confirm("Delete "+staff[id].name+" and "+ks.length+" history entr"+(ks.length===1?"y":"ies")+"? This cannot be undone."))return;
+var b=db.batch();ks.forEach(function(k){b.delete(db.collection("log").doc(k))});b.delete(db.collection("staff").doc(id));
+b.commit().then(function(){sel=null;render()}).catch(fail)};
 $("codeBtn").onclick=function(){if(!isOwner||!sel)return;var c=prompt("Private code for "+staff[sel].name+". Leave empty to remove it.","");if(c===null)return;c=c.trim();
 var p=c?sha(sel+":"+c):Promise.resolve(null);
 p.then(function(h){return db.collection("staff").doc(sel).set({codeHash:h},{merge:true})}).catch(fail)};
