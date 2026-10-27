@@ -2,12 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Replace with the owner's UID from Firebase Authentication > Users.
     function isOwner() {
       return request.auth != null && request.auth.uid == 'TCWhJclOb7XhHTChGiNnrvtEQ8k2';
     }
 
-    // Balances and history: anyone signed in (staff use anonymous sign-in) can read; only the owner writes.
     match /staff/{id} {
       allow read: if request.auth != null;
       allow write: if isOwner();
@@ -17,7 +15,6 @@ service cloud.firestore {
       allow write: if isOwner();
     }
 
-    // Requests: each staff device can read and write only its own document; the owner can read and write all.
     match /requests/{uid} {
       allow read, write: if isOwner() || (request.auth != null && request.auth.uid == uid);
     }
