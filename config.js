@@ -6,6 +6,9 @@ window.APP_CONFIG = {
     projectId: "just-pending-off-tracker",
     appId: "1:374165943473:web:3f5518cad6dc8d77615e90"
   },
-  // The owner's Firebase Auth user ID (Authentication > Users > User UID). Fill this in after creating your owner user.
+  // Free email service (EmailJS). Leave the three values empty to turn emails off.
+  emailjs: { publicKey: "", serviceId: "", templateId: "" },
+  adminEmail: "admin@justoptic.com",
+  // The owner's Firebase Auth user ID (Authentication > Users > User UID).
   ownerUid: "TCWhJclOb7XhHTChGiNnrvtEQ8k2"
 };

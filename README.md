@@ -43,3 +43,28 @@ Firebase Hosting gives you a free address like `https://YOUR-PROJECT-ID.web.app`
 7. Open the Hosting URL the command prints.
 
 To update the app later, change the files and run `firebase deploy` again.
+
+## Free email alerts and login codes (EmailJS, no card needed)
+The app uses a free email service called EmailJS to send mail, so Firebase stays on the free plan.
+
+**What it does**
+- You get an email at admin@justoptic.com whenever a staff member applies for a pending off or asks for a login code.
+- Staff choose their name from a dropdown. If they have no code, or forgot it, they enter their email and click **Ask for a code**. You then open the app and click **Email code** under Requests. A random 4-digit code is emailed to that address and becomes their code.
+- After logging in, staff see "You have N pending off left."
+
+**Set up EmailJS**
+1. Create a free account at https://www.emailjs.com
+2. **Email Services > Add New Service**: connect the mailbox the emails should be sent from (Gmail or Outlook, or your own SMTP). Copy the **Service ID**.
+3. **Email Templates > Create New Template**. Set **To Email** to `{{to_email}}`, **Subject** to `{{subject}}` and the **Content** to `{{message}}`. Save and copy the **Template ID**.
+4. **Account > General**: copy your **Public Key**.
+5. Paste the three values into `config.js` under `emailjs`. Check `adminEmail` too.
+6. Upload the new `index.html`, `config.js` and `firestore.rules`, and publish the rules again in Firebase (Firestore > Rules).
+7. If EmailJS offers a setting to allow only your website address, turn it on.
+
+**Limits to know**
+- The free EmailJS plan has a monthly email allowance. Check its pricing page for the current number.
+- The alerts are sent from the staff member's browser, so they are not tamper-proof. Someone with technical knowledge could send extra alert emails until the allowance runs out. They cannot change balances or approve anything.
+- Codes are checked in the page, and the stored scrambled code is readable by signed-in staff, so a 4-digit code can be guessed by a determined person. Treat it as a light lock, not strong security. Use a longer code for anyone who needs more protection (Set private code).
+- Staff emails are stored where only you can read them.
+- To reset someone, select them and use **Set private code** with an empty value. It clears their code and saved email.
+- Staff who have no code can still log in with their name only.
