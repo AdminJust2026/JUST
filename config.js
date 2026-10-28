@@ -7,7 +7,7 @@ window.APP_CONFIG = {
     appId: "1:374165943473:web:3f5518cad6dc8d77615e90"
   },
   // Free email service (EmailJS). Leave the three values empty to turn emails off.
-  emailjs: { publicKey: "Ixguug4UrdAfXB11_", serviceId: "service_p13c56t", templateId: "template_rqdgv3p" },
+  emailjs: { publicKey: "Ixguug4UrdAfXB11_", serviceId: "service_p13c56t", templateId: "template_xio2vp8" },
   adminEmail: "admin@justoptic.com",
   // The owner's Firebase Auth user ID (Authentication > Users > User UID).
   ownerUid: "TCWhJclOb7XhHTChGiNnrvtEQ8k2"
