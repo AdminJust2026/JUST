@@ -77,10 +77,10 @@ ul{margin:0;padding:0}li{display:grid;grid-template-columns:90px 1fr auto;gap:8p
 <div class="card" id="reqCard" style="display:none"><h2 id="reqH">Requests</h2><ul id="reqList"></ul><div id="reqMsg" class="msg"></div></div>
 <div class="card" id="histCard" style="display:none">
 <div class="stats" id="mine" style="display:none"><div class="stat"><b id="mE">0</b><span>Earned</span></div><div class="stat"><b id="mU">0</b><span>Used</span></div><div class="stat"><b id="mL">0</b><span>Pending left</span></div></div>
-<div class="hd"><h2 id="hh">History</h2><span><button class="link" id="renBtn" style="display:none">Rename</button><button class="link" id="delBtn" style="display:none">Delete staff</button><button class="link" id="codeBtn" style="display:none">Set private code</button><button class="link" id="logout" style="display:none">Log out</button></span></div>
+<div class="hd"><h2 id="hh">History</h2><span><button class="link" id="emailBtn" style="display:none">Set email</button><button class="link" id="renBtn" style="display:none">Rename</button><button class="link" id="delBtn" style="display:none">Delete staff</button><button class="link" id="codeBtn" style="display:none">Set private code</button><button class="link" id="logout" style="display:none">Log out</button></span></div>
 <ul id="hist"></ul><div id="hmsg" class="msg">Select a staff member to see their history.</div></div>
 <div id="note" class="msg"></div>
-<div id="pop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:9;padding:20px"><div class="card" style="max-width:340px;text-align:center;margin:0"><h2 id="popT">Hello</h2><p id="popM" style="font-size:18px;margin:0 0 14px"></p><button class="pri" id="popOk">OK</button></div></div>
+<div id="pop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:9;padding:20px"><div class="card" style="max-width:340px;text-align:center;margin:0"><h2 id="popT">Hello</h2><p id="popM" style="font-size:18px;margin:0 0 10px"></p><div id="popX" style="margin:0 0 14px"></div><button class="pri" id="popOk">OK</button></div></div>
 </section>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -135,11 +135,11 @@ $("seedBox").innerHTML=(isOwner&&!ids.length)?'No staff yet. <button class="pri"
 if(!isOwner)sel=me;
 syncLogin();layout();reqList();history_()}
 function history_(){
-if(!sel||!staff[sel]){$("mine").style.display="none";$("codeBtn").style.display="none";$("renBtn").style.display="none";$("delBtn").style.display="none";$("hh").textContent="History";$("hist").innerHTML="";$("hmsg").style.display="";return}
+if(!sel||!staff[sel]){$("mine").style.display="none";$("codeBtn").style.display="none";$("emailBtn").style.display="none";$("renBtn").style.display="none";$("delBtn").style.display="none";$("hh").textContent="History";$("hist").innerHTML="";$("hmsg").style.display="";return}
 var b=bal(sel),items=Object.keys(log).filter(function(k){return log[k].staff===sel}).sort(function(a,c){return (log[c].date||"").localeCompare(log[a].date||"")});
 $("hh").textContent=staff[sel].name+" \u2014 "+fmt(b.l)+" left";
 $("mine").style.display="";$("mE").textContent=fmt(b.e);$("mU").textContent=fmt(b.u);$("mL").textContent=fmt(b.l);
-$("renBtn").style.display=isOwner?"":"none";$("delBtn").style.display=isOwner?"":"none";$("codeBtn").style.display=isOwner?"":"none";$("codeBtn").textContent=staff[sel].codeHash?"Change or remove code":"Set private code";
+$("emailBtn").style.display=isOwner?"":"none";$("renBtn").style.display=isOwner?"":"none";$("delBtn").style.display=isOwner?"":"none";$("codeBtn").style.display=isOwner?"":"none";$("codeBtn").textContent=staff[sel].codeHash?"Change or remove code":"Set private code";
 var h='',pastSum=0;items.forEach(function(k){if(log[k].type==="past")pastSum+=+log[k].days||0});var rest=(+staff[sel].openUsed||0)-pastSum;
 if(+staff[sel].openUsed)h+='<li><span class="tag">Before log</span><span>Used '+fmt(+staff[sel].openUsed)+' days before this log. Itemised below: '+fmt(pastSum)+(rest>0?'. Not yet itemised: '+fmt(rest):rest<0?'. Itemised is more than this total by '+fmt(-rest):'. All itemised.')+(staff[sel].openNote?'<br><span class="sub">Comment: '+esc(staff[sel].openNote)+'</span>':'')+'</span>'+(isOwner?'<button class="link" data-cmo="1">Comment</button>':'<span></span>')+'</li>';
 items.forEach(function(k){var l=log[k];
@@ -159,7 +159,7 @@ var er=function(e){fail(e)};
 unsubs.push(db.collection("staff").onSnapshot(function(s){staff={};s.forEach(function(d){staff[d.id]=d.data()});render()},er));
 unsubs.push(db.collection("log").onSnapshot(function(s){log={};s.forEach(function(d){log[d.id]=d.data()});render()},er));
 if(isOwner)unsubs.push(db.collection("requests").onSnapshot(function(s){reqs={};s.forEach(function(d){reqs[d.id]=d.data().items||[]});reqList()},er));
-else unsubs.push(db.doc("requests/"+uid).onSnapshot(function(d){reqs={};reqs[uid]=d.exists?(d.data().items||[]):[];reqList()},er));
+else unsubs.push(db.doc("requests/"+uid).onSnapshot(function(d){reqs={};reqs[uid]=d.exists?(d.data().items||[]):[];reqList();checkDecisions()},er));
 render()}
 auth.onAuthStateChanged(function(u){
 if(!u){auth.signInAnonymously().catch(function(e){$("note").className="msg err";$("note").textContent="Sign-in failed: "+e.message});return}
@@ -176,7 +176,7 @@ var u=e.target.getAttribute("data-u"),id=e.target.getAttribute("data-r"),items=r
 var mark=function(st){return db.doc("requests/"+u).set({items:items.map(function(x){return x.id===id?Object.assign({},x,{status:st}):x})})};
 if(a==="code"){sendCode(r).then(function(){return mark("sent")}).catch(function(er){if(er&&er.message!=="cancelled")fail(er)});return}
 var p=a==="ok"?db.collection("log").add({staff:r.staff,type:"use",date:r.date,days:r.days,reason:r.reason,by:"Manager"}):Promise.resolve();
-p.then(function(){return mark(a==="ok"?"approved":"declined")}).catch(fail)});
+p.then(function(){return mark(a==="ok"?"approved":"declined")}).then(function(){emailDecision(r,a==="ok")}).catch(fail)});
 function mailOn(){return !!(C.emailjs&&C.emailjs.publicKey&&C.emailjs.serviceId&&C.emailjs.templateId)}
 function mail(to,subject,message){if(!mailOn())return Promise.reject(new Error("Email is not set up yet (see config.js)."));
 return emailjs.send(C.emailjs.serviceId,C.emailjs.templateId,{to_email:to,subject:subject,message:message},{publicKey:C.emailjs.publicKey})}
@@ -189,6 +189,16 @@ return mail(r.email,"Your Pending Off code","Hello "+name+",\n\nYour 4-digit cod
 .then(function(){return db.collection("privateInfo").doc(r.staff).set({email:r.email},{merge:true})})}
 function notifyAdmin(rec){if(!mailOn())return;var n=staff[rec.staff]?staff[rec.staff].name:"Staff";
 mail(C.adminEmail||"admin@justoptic.com","Pending off request: "+n+" - "+rec.date+" ("+rec.days+" day"+(+rec.days===1?"":"s")+")","New pending off request for approval\n\nStaff: "+n+"\nDate: "+rec.date+"\nDays: "+rec.days+"\nReason: "+rec.reason+"\n\nOpen the app, sign in as owner and approve or decline it:\n"+location.href.split("#")[0]).catch(function(e){$("fmsg").className="msg err";$("fmsg").textContent="Request saved, but the alert email could not be sent: "+((e&&(e.text||e.message))||"unknown error")+(e&&e.status?" (code "+e.status+")":"")})}
+function checkDecisions(){if(isOwner||!me||!uid)return;var items=reqs[uid]||[];
+var fresh=items.filter(function(x){return x.kind!=="code"&&(x.status==="approved"||x.status==="declined")&&!x.seen});if(!fresh.length)return;
+if($("pop").style.display!=="flex"){$("popT").textContent="Update on your request";$("popM").textContent=""}
+$("popX").innerHTML=fresh.map(function(x){return '<div>'+esc(x.date)+' ('+fmt(+x.days)+' day'+(+x.days===1?'':'s')+'): <b>'+(x.status==="approved"?"Approved":"Declined")+'</b></div>'}).join("");
+$("pop").style.display="flex";
+db.doc("requests/"+uid).set({items:items.map(function(x){return fresh.indexOf(x)>=0?Object.assign({},x,{seen:true}):x})}).catch(function(){})}
+function emailDecision(r,ok){if(!mailOn())return;
+db.collection("privateInfo").doc(r.staff).get().then(function(sn){var em=sn.exists&&sn.data().email;if(!em)return;
+var n=staff[r.staff]?staff[r.staff].name:"";
+return mail(em,"Your pending off request was "+(ok?"approved":"declined"),"Hello "+n+",\n\nYour pending off request for "+r.date+" ("+r.days+" day"+(+r.days===1?"":"s")+") was "+(ok?"APPROVED":"DECLINED")+".\n\nOpen the Pending Off Tracker to see your balance:\n"+location.href.split("#")[0]+"\n")}).catch(function(e){$("note").className="msg err";$("note").textContent="Decision saved, but the email to the staff member failed: "+((e&&(e.text||e.message))||"unknown error")})}
 function notifyCode(rec){if(!mailOn())return;var n=staff[rec.staff]?staff[rec.staff].name:"Staff";
 mail(C.adminEmail||"admin@justoptic.com","Login code request: "+n,n+" asked for a login code to be sent to "+rec.email+".\n\nOpen the app as owner and click Email code under Requests:\n"+location.href.split("#")[0]).catch(function(e){$("lmsg").className="msg err";$("lmsg").textContent="Request saved, but the alert email could not be sent: "+((e&&(e.text||e.message))||"unknown error")})}
 $("seedBox").addEventListener("click",function(e){if(e.target.id!=="seedBtn"||!isOwner)return;
@@ -196,6 +206,11 @@ var b=db.batch();SEED.forEach(function(s){b.set(db.collection("staff").doc(s[0].
 $("addStaff").onclick=function(){if(!isOwner)return;var n=(prompt("Staff name")||"").trim();if(!n)return;
 var o=parseFloat(prompt("Days earned so far (opening balance)","0"))||0,u=parseFloat(prompt("Days already used","0"))||0;
 db.collection("staff").add({name:n,openEarned:o,openUsed:u}).catch(fail)};
+$("emailBtn").onclick=function(){if(!isOwner||!sel)return;var id=sel;
+db.collection("privateInfo").doc(id).get().then(function(sn){var cur=sn.exists?(sn.data().email||""):"";
+var e=prompt("Email for "+staff[id].name+" (used to send them approval and decline notices). Leave empty to remove.",cur);if(e===null)return;e=e.trim();
+if(e&&!/^\S+@\S+\.\S+$/.test(e)){alert("That email does not look right.");return}
+return e?db.collection("privateInfo").doc(id).set({email:e},{merge:true}):db.collection("privateInfo").doc(id).delete()}).catch(fail)};
 $("renBtn").onclick=function(){if(!isOwner||!sel)return;var n=(prompt("New name for "+staff[sel].name,staff[sel].name)||"").trim();if(!n||n===staff[sel].name)return;
 var dup=Object.keys(staff).some(function(id){return id!==sel&&staff[id].name.toLowerCase()===n.toLowerCase()});
 if(dup){alert("Another staff member already has that name.");return}
@@ -210,7 +225,7 @@ p.then(function(h){if(!h)db.collection("privateInfo").doc(id).delete().catch(fun
 function setType(t){type=t;$("tUse").classList.toggle("on",t==="use");$("tEarn").classList.toggle("on",t==="earn");$("tPast").classList.toggle("on",t==="past");layout()}
 $("tUse").onclick=function(){setType("use")};$("tEarn").onclick=function(){setType("earn")};$("tPast").onclick=function(){setType("past")};
 function enter(id){me=id;$("lmsg").textContent="";sel=id;render();popup(id)}
-function popup(id){var b=bal(id);$("popT").textContent="Hello "+staff[id].name;$("popM").textContent="You have "+fmt(b.l)+" pending off left.";$("pop").style.display="flex"}
+function popup(id){var b=bal(id);$("popT").textContent="Hello "+staff[id].name;$("popM").textContent="You have "+fmt(b.l)+" pending off left.";$("popX").innerHTML="";$("pop").style.display="flex";checkDecisions()}
 $("popOk").onclick=function(){$("pop").style.display="none"};
 function syncLogin(){if(isOwner||me)return;var cur=$("un").value,ids=Object.keys(staff).sort(function(a,b){return staff[a].name.localeCompare(staff[b].name)});
 $("un").innerHTML='<option value="">Select your name</option>'+ids.map(function(id){return '<option value="'+esc(id)+'">'+esc(staff[id].name)+'</option>'}).join("");
