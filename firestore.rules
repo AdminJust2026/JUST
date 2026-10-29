@@ -17,6 +17,15 @@ service cloud.firestore {
       allow write: if isOwner();
     }
 
+    // Login codes (scrambled). Anyone signed in can read them to check a login.
+    // A code can be created once; a re-issue must keep the same email fingerprint. The owner can do anything.
+    match /codes/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if isOwner() || (request.auth != null && request.resource.data.emailHash == resource.data.emailHash);
+      allow delete: if isOwner();
+    }
+
     // Staff emails (private): only the owner can read or write.
     match /privateInfo/{id} {
       allow read, write: if isOwner();
