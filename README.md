@@ -48,8 +48,9 @@ To update the app later, change the files and run `firebase deploy` again.
 The app uses a free email service called EmailJS to send mail, so Firebase stays on the free plan.
 
 **What it does**
-- You get an email at admin@justoptic.com whenever a staff member applies for a pending off or asks for a login code.
-- Staff choose their name from a dropdown. If they have no code, or forgot it, they enter their email and click **Ask for a code**. You then open the app and click **Email code** under Requests. A random 4-digit code is emailed to that address and becomes their code.
+- You get an email at admin@justoptic.com whenever a staff member applies for a pending off, and whenever someone gets a login code.
+- Staff choose their name from a dropdown. If they have no code, or forgot it, they enter their email and click **Email me a code**. A random 4-digit code is emailed straight to them, with no approval needed, and becomes their code.
+- When you approve or decline a request, staff see a popup in the app, and get an email if you saved their email (**Set email**).
 - After logging in, staff see "You have N pending off left."
 
 **Set up EmailJS**
@@ -64,7 +65,8 @@ The app uses a free email service called EmailJS to send mail, so Firebase stays
 **Limits to know**
 - The free EmailJS plan has a monthly email allowance. Check its pricing page for the current number.
 - The alerts are sent from the staff member's browser, so they are not tamper-proof. Someone with technical knowledge could send extra alert emails until the allowance runs out. They cannot change balances or approve anything.
-- Codes are checked in the page, and the stored scrambled code is readable by signed-in staff, so a 4-digit code can be guessed by a determined person. Treat it as a light lock, not strong security. Use a longer code for anyone who needs more protection (Set private code).
-- Staff emails are stored where only you can read them.
+- Codes are made and checked in the page, because the free plan has no server. A technical person who knows a colleague's email could get that colleague's code. The first email used for a person is remembered (as a fingerprint), and a different email is refused. You are emailed every time a code is sent, so you can see it. Use **Set private code** with an empty value to reset anyone.
+- Staff who have no code yet can log in with their name only, and anyone could register a code for a colleague who hasn't yet. Ask everyone to set theirs up once.
+- Emails you save with **Set email** are stored where only you can read them. The email used to get a code is stored only as a fingerprint.
 - To reset someone, select them and use **Set private code** with an empty value. It clears their code and saved email.
 - Staff who have no code can still log in with their name only.
