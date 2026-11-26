@@ -65,8 +65,8 @@ The app uses a free email service called EmailJS to send mail, so Firebase stays
 **Limits to know**
 - The free EmailJS plan has a monthly email allowance. Check its pricing page for the current number.
 - The alerts are sent from the staff member's browser, so they are not tamper-proof. Someone with technical knowledge could send extra alert emails until the allowance runs out. They cannot change balances or approve anything.
-- Codes are made and checked in the page, because the free plan has no server. A technical person who knows a colleague's email could get that colleague's code. The first email used for a person is remembered (as a fingerprint), and a different email is refused. You are emailed every time a code is sent, so you can see it. Use **Set private code** with an empty value to reset anyone.
-- Staff who have no code yet can log in with their name only, and anyone could register a code for a colleague who hasn't yet. Ask everyone to set theirs up once.
-- Emails you save with **Set email** are stored where only you can read them. The email used to get a code is stored only as a fingerprint.
+- **Staff emails:** you save each person's email (select them and click **Set email**, or paste many at once under **Add staff emails in bulk**, one `name, email` per line). Staff never type an email. They pick their name, see it partly hidden (for example `te******@g****.com`) and click **Email me a code**.
+- Codes are made and checked in the page, because the free plan has no server. The saved emails are stored with the staff record, so a technical person looking at the data could read them, and could also overwrite a colleague's code. Ordinary staff using the app cannot. You are emailed every time a code is sent. Use **Set private code** with an empty value to reset anyone.
+- Staff who have no code yet can log in with their name only. Ask everyone to set theirs up once.
 - To reset someone, select them and use **Set private code** with an empty value. It clears their code and saved email.
 - Staff who have no code can still log in with their name only.
