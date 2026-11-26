@@ -17,12 +17,6 @@ service cloud.firestore {
       allow write: if isOwner();
     }
 
-    // Login codes (scrambled). Signed-in users can read them to check a login and write one when a code is emailed.
-    match /codes/{id} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if isOwner();
-    }
-
     // Staff emails (private): only the owner can read or write.
     match /privateInfo/{id} {
       allow read, write: if isOwner();

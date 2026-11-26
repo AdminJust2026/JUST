@@ -22,7 +22,7 @@ Tracks public-holiday pending offs for staff. The owner records and approves; st
 ## 4. First use
 1. Click **Owner sign in** and sign in with your owner account.
 2. Click **Import the 25 staff from your sheet** to load current balances.
-3. Set private codes (optional) from each staff member's panel.
+3. Save each staff member's email (Set email, or Add staff emails in bulk).
 4. Send staff the link. They type their username (their name as on the list) and code if you gave one.
 
 ## Notes
@@ -66,7 +66,8 @@ The app uses a free email service called EmailJS to send mail, so Firebase stays
 - The free EmailJS plan has a monthly email allowance. Check its pricing page for the current number.
 - The alerts are sent from the staff member's browser, so they are not tamper-proof. Someone with technical knowledge could send extra alert emails until the allowance runs out. They cannot change balances or approve anything.
 - **Staff emails:** you save each person's email (select them and click **Set email**, or paste many at once under **Add staff emails in bulk**, one `name, email` per line). Staff never type an email. They pick their name, see it partly hidden (for example `te******@g****.com`) and click **Email me a code**.
-- Codes are made and checked in the page, because the free plan has no server. The saved emails are stored with the staff record, so a technical person looking at the data could read them, and could also overwrite a colleague's code. Ordinary staff using the app cannot. You are emailed every time a code is sent. Use **Set private code** with an empty value to reset anyone.
-- Staff who have no code yet can log in with their name only. Ask everyone to set theirs up once.
-- To reset someone, select them and use **Set private code** with an empty value. It clears their code and saved email.
+- Codes are made in the page and are **never stored**. The code is emailed to the staff member, and only a scrambled copy is kept in that browser window's memory until it is used. If the page is refreshed, or a new login starts, the staff member must ask for a new code.
+- The saved emails are stored with the staff record, so a technical person looking at the data could read them. Ordinary staff using the app cannot. You are emailed every time a code is sent.
+- **Codes are one-time.** Every login needs a new code: the code works once, expires after 10 minutes, and is discarded after a successful login or after 5 wrong tries. Staff cannot log in without asking for a code first.
+- If a staff member cannot receive email, check their saved email with **Set email**.
 - Staff who have no code can still log in with their name only.

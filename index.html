@@ -60,7 +60,7 @@ ul{margin:0;padding:0}li{display:grid;grid-template-columns:90px 1fr auto;gap:8p
 <button class="pri" id="oBtn">Sign in</button> <span id="omsg" class="msg err"></span></div>
 <div class="card" id="loginCard" style="display:none"><h2>Log in</h2>
 <label for="un">Choose your name</label><select id="un" style="margin-bottom:8px"></select>
-<div id="pcRow" style="display:none"><label for="pc">Your 4-digit code</label><input id="pc" type="password" inputmode="numeric" autocomplete="off" placeholder="Code"></div>
+<div id="pcRow" style="display:none"><label for="pc">Your 4-digit code</label><input id="pc" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Code"></div>
 <div class="tools" style="margin-top:8px"><button class="pri" id="loginBtn" type="button">Log in</button></div>
 <div id="mailBox"><div id="mailInfo" class="sub" style="margin-bottom:8px"></div><button id="sendBtn" type="button">Email me a code</button></div>
 <div id="lmsg" class="msg err"></div></div>
@@ -78,7 +78,7 @@ ul{margin:0;padding:0}li{display:grid;grid-template-columns:90px 1fr auto;gap:8p
 <div class="card" id="reqCard" style="display:none"><h2 id="reqH">Requests</h2><ul id="reqList"></ul><div id="reqMsg" class="msg"></div></div>
 <div class="card" id="histCard" style="display:none">
 <div class="stats" id="mine" style="display:none"><div class="stat"><b id="mE">0</b><span>Earned</span></div><div class="stat"><b id="mU">0</b><span>Used</span></div><div class="stat"><b id="mL">0</b><span>Pending left</span></div></div>
-<div class="hd"><h2 id="hh">History</h2><span><button class="link" id="emailBtn" style="display:none">Set email</button><button class="link" id="renBtn" style="display:none">Rename</button><button class="link" id="delBtn" style="display:none">Delete staff</button><button class="link" id="codeBtn" style="display:none">Set private code</button><button class="link" id="logout" style="display:none">Log out</button></span></div>
+<div class="hd"><h2 id="hh">History</h2><span><button class="link" id="emailBtn" style="display:none">Set email</button><button class="link" id="renBtn" style="display:none">Rename</button><button class="link" id="delBtn" style="display:none">Delete staff</button><button class="link" id="codeBtn" style="display:none">Set one-time code</button><button class="link" id="logout" style="display:none">Log out</button></span></div>
 <ul id="hist"></ul><div id="hmsg" class="msg">Select a staff member to see their history.</div></div>
 <div id="note" class="msg"></div>
 <div id="pop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:9;padding:20px"><div class="card" style="max-width:340px;text-align:center;margin:0"><h2 id="popT">Hello</h2><p id="popM" style="font-size:18px;margin:0 0 10px"></p><div id="popX" style="margin:0 0 14px"></div><button class="pri" id="popOk">OK</button></div></div>
@@ -140,7 +140,7 @@ if(!sel||!staff[sel]){$("mine").style.display="none";$("codeBtn").style.display=
 var b=bal(sel),items=Object.keys(log).filter(function(k){return log[k].staff===sel}).sort(function(a,c){return (log[c].date||"").localeCompare(log[a].date||"")});
 $("hh").textContent=staff[sel].name+" \u2014 "+fmt(b.l)+" left";
 $("mine").style.display="";$("mE").textContent=fmt(b.e);$("mU").textContent=fmt(b.u);$("mL").textContent=fmt(b.l);
-$("emailBtn").style.display=isOwner?"":"none";$("renBtn").style.display=isOwner?"":"none";$("delBtn").style.display=isOwner?"":"none";$("codeBtn").style.display=isOwner?"":"none";$("codeBtn").textContent=(codes[sel]||{}).codeHash?"Change or remove code":"Set private code";
+$("emailBtn").style.display=isOwner?"":"none";$("renBtn").style.display=isOwner?"":"none";$("delBtn").style.display=isOwner?"":"none";$("codeBtn").style.display="none";
 var h='',pastSum=0;items.forEach(function(k){if(log[k].type==="past")pastSum+=+log[k].days||0});var rest=(+staff[sel].openUsed||0)-pastSum;
 if(+staff[sel].openUsed)h+='<li><span class="tag">Before log</span><span>Used '+fmt(+staff[sel].openUsed)+' days before this log. Itemised below: '+fmt(pastSum)+(rest>0?'. Not yet itemised: '+fmt(rest):rest<0?'. Itemised is more than this total by '+fmt(-rest):'. All itemised.')+(staff[sel].openNote?'<br><span class="sub">Comment: '+esc(staff[sel].openNote)+'</span>':'')+'</span>'+(isOwner?'<button class="link" data-cmo="1">Comment</button>':'<span></span>')+'</li>';
 items.forEach(function(k){var l=log[k];
@@ -148,7 +148,7 @@ h+='<li><span class="tag">'+esc(l.date)+'</span><span>'+(l.type==="earn"?'Earned
 $("hist").innerHTML=h;$("hmsg").style.display=h?"none":"";if(!h)$("hmsg").textContent="No entries yet."}
 function reqList(){var h="";
 if(isOwner){Object.keys(reqs).forEach(function(u){(reqs[u]||[]).forEach(function(r){if(r.status!=="pending"||!staff[r.staff])return;
-if(r.kind==="code"){h+='<li><span class="tag">'+esc(r.date)+'</span><span>'+esc(staff[r.staff].name)+' asked for a login code ('+esc(r.email)+')</span><span><button class="link" data-act="code" data-u="'+esc(u)+'" data-r="'+esc(r.id)+'">Email code</button><button class="link" data-act="no" data-u="'+esc(u)+'" data-r="'+esc(r.id)+'">Decline</button></span></li>';return}
+if(r.kind==="code"){h+='<li><span class="tag">'+esc(r.date)+'</span><span>'+esc(staff[r.staff].name)+' asked for a login code ('+esc(r.email)+')</span><span><button class="link" data-act="no" data-u="'+esc(u)+'" data-r="'+esc(r.id)+'">Decline</button></span></li>';return}
 h+='<li><span class="tag">'+esc(r.date)+'</span><span>'+esc(staff[r.staff].name)+' \u2014 '+fmt(+r.days)+' day'+(+r.days===1?'':'s')+' \u2014 '+esc(r.reason)+'</span><span><button class="link" data-act="ok" data-u="'+esc(u)+'" data-r="'+esc(r.id)+'">Approve</button><button class="link" data-act="no" data-u="'+esc(u)+'" data-r="'+esc(r.id)+'">Decline</button></span></li>'})});
 $("reqH").textContent="Requests to approve";$("reqMsg").textContent=h?"":"No pending requests."}
 else{(reqs[uid]||[]).slice().reverse().forEach(function(r){h+='<li><span class="tag">'+esc(r.date)+'</span><span>'+(r.kind==="code"?'Login code request':fmt(+r.days)+' day'+(+r.days===1?'':'s')+' \u2014 '+esc(r.reason))+'</span><span class="tag">'+esc(r.status)+'</span></li>'});
@@ -159,7 +159,6 @@ unsubs.forEach(function(u){u()});unsubs=[];staff={};log={};reqs={};codes={};
 var er=function(e){fail(e)};
 unsubs.push(db.collection("staff").onSnapshot(function(s){staff={};s.forEach(function(d){staff[d.id]=d.data()});render()},er));
 unsubs.push(db.collection("log").onSnapshot(function(s){log={};s.forEach(function(d){log[d.id]=d.data()});render()},er));
-unsubs.push(db.collection("codes").onSnapshot(function(s){codes={};s.forEach(function(d){codes[d.id]=d.data()});render()},er));
 if(isOwner)unsubs.push(db.collection("requests").onSnapshot(function(s){reqs={};s.forEach(function(d){reqs[d.id]=d.data().items||[]});reqList()},er));
 else unsubs.push(db.doc("requests/"+uid).onSnapshot(function(d){reqs={};reqs[uid]=d.exists?(d.data().items||[]):[];reqList();checkDecisions()},er));
 render()}
@@ -226,11 +225,9 @@ if(dup){alert("Another staff member already has that name.");return}
 db.collection("staff").doc(sel).set({name:n},{merge:true}).catch(fail)};
 $("delBtn").onclick=function(){if(!isOwner||!sel)return;var id=sel,ks=Object.keys(log).filter(function(k){return log[k].staff===id});
 if(!confirm("Delete "+staff[id].name+" and "+ks.length+" history entr"+(ks.length===1?"y":"ies")+"? This cannot be undone."))return;
-var b=db.batch();ks.forEach(function(k){b.delete(db.collection("log").doc(k))});b.delete(db.collection("staff").doc(id));b.delete(db.collection("codes").doc(id));b.delete(db.collection("privateInfo").doc(id));
+var b=db.batch();ks.forEach(function(k){b.delete(db.collection("log").doc(k))});b.delete(db.collection("staff").doc(id));b.delete(db.collection("privateInfo").doc(id));
 b.commit().then(function(){sel=null;render()}).catch(fail)};
-$("codeBtn").onclick=function(){if(!isOwner||!sel)return;var c=prompt("Private code for "+staff[sel].name+". Leave empty to remove the code.","");if(c===null)return;c=c.trim();var id=sel;
-if(!c){db.collection("codes").doc(id).delete().catch(fail);return}
-sha(id+":"+c).then(function(h){return db.collection("codes").doc(id).set({codeHash:h})}).catch(fail)};
+
 function setType(t){type=t;$("tUse").classList.toggle("on",t==="use");$("tEarn").classList.toggle("on",t==="earn");$("tPast").classList.toggle("on",t==="past");layout()}
 $("tUse").onclick=function(){setType("use")};$("tEarn").onclick=function(){setType("earn")};$("tPast").onclick=function(){setType("past")};
 function enter(id){me=id;$("lmsg").textContent="";sel=id;render();popup(id)}
@@ -241,7 +238,7 @@ return l.slice(0,2)+"*".repeat(Math.max(l.length-2,3))+"@"+dom.slice(0,1)+"*".re
 function syncLogin(){if(isOwner||me)return;var cur=$("un").value,ids=Object.keys(staff).sort(function(a,b){return staff[a].name.localeCompare(staff[b].name)});
 $("un").innerHTML='<option value="">Select your name</option>'+ids.map(function(id){return '<option value="'+esc(id)+'">'+esc(staff[id].name)+'</option>'}).join("");
 if(cur&&staff[cur])$("un").value=cur;var id=$("un").value;$("pcRow").style.display=id?"":"none";
-var em=id&&staff[id]&&staff[id].email;$("mailInfo").textContent=!id?"Choose your name first.":em?"We will email a random 4-digit code to "+maskEmail(em)+". Ask again any time if you forget it.":"No email is saved for you yet. Please ask the manager.";$("sendBtn").style.display=em?"":"none"}
+var em=id&&staff[id]&&staff[id].email;$("mailInfo").textContent=!id?"Choose your name first.":em?"We will email a random 4-digit code to "+maskEmail(em)+". Each login needs a new code.":"No email is saved for you yet. Please ask the manager.";$("sendBtn").style.display=em?"":"none"}
 $("un").addEventListener("change",syncLogin);
 
 $("sendBtn").onclick=function(){var id=matchStaff(),m=$("lmsg"),btn=$("sendBtn");m.className="msg err";
@@ -251,15 +248,19 @@ if(!mailOn()){m.textContent="Email is not set up yet. Please ask the manager.";r
 btn.disabled=true;m.textContent="Sending...";
 var c=String(crypto.getRandomValues(new Uint32Array(1))[0]%10000).padStart(4,"0"),name=staff[id].name;
 mail(em,"Your Pending Off code","Hello "+name+",\n\nYour 4-digit code is: "+c+"\n\nChoose your name on the Pending Off Tracker and enter this code to log in.\nIf you did not ask for this, tell the manager.")
-.then(function(){return sha(id+":"+c)}).then(function(h){return db.collection("codes").doc(id).set({codeHash:h})})
-.then(function(){m.className="msg";m.textContent="We sent a 4-digit code to "+maskEmail(em)+". Enter it above and log in.";$("pc").value="";
-mail(C.adminEmail||"admin@justoptic.com","Login code sent: "+name,"A login code was sent to "+name+" at "+em+".\n\nIf this looks wrong, open the app, select the staff member and use Set private code with an empty value to reset it.").catch(function(){})})
+.then(function(){return sha(id+":"+c)}).then(function(h){pending[id]={h:h,at:Date.now()}})
+.then(function(){m.className="msg";m.textContent="We sent a 4-digit code to "+maskEmail(em)+". Enter it above in this same window. It works once, for 10 minutes, and is not stored anywhere. If you refresh the page, ask for a new one.";$("pc").value="";
+mail(C.adminEmail||"admin@justoptic.com","Login code sent: "+name,"A login code was sent to "+name+" at "+em+".\n\nIf you did not expect this, check the saved email for this staff member in the app (Set email).").catch(function(){})})
 .catch(function(e){m.className="msg err";m.textContent=(e&&(e.text||e.message))||"Could not send the email."}).then(function(){btn.disabled=false})};
+var tries={},pending={};
 function login(){var id=matchStaff(),m=$("lmsg");m.className="msg err";if(!id){m.textContent="Choose your name.";return}
-var want=(codes[id]||{}).codeHash;
-if(!want){m.textContent=staff[id].email?"Click Email me a code first, then enter the code you receive.":"No email is saved for you yet. Please ask the manager.";return}
+var pd=pending[id];
+if(!pd){m.textContent=staff[id].email?"Click Email me a code first, then enter the code you receive.":"No email is saved for you yet. Please ask the manager.";return}
 if(!$("pc").value.trim()){m.textContent="Enter the code from your email.";return}
-m.textContent="";sha(id+":"+$("pc").value.trim()).then(function(h){if(h===want)enter(id);else m.textContent="Code not correct."}).catch(function(){m.textContent="Could not check the code here."})}
+m.textContent="";sha(id+":"+$("pc").value.trim()).then(function(h){
+if(h===pd.h){delete pending[id];tries[id]=0;if(Date.now()-pd.at>600000){m.textContent="This code has expired. Ask for a new one.";return}$("pc").value="";enter(id);return}
+tries[id]=(tries[id]||0)+1;if(tries[id]>=5){delete pending[id];tries[id]=0;m.textContent="Too many wrong tries. Ask for a new code.";return}
+m.textContent="Code not correct."}).catch(function(){m.textContent="Could not check the code here."})}
 $("loginBtn").onclick=login;
 [$("un"),$("pc")].forEach(function(i){i.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();login()}})});
 $("logout").onclick=function(){me=null;sel=null;$("un").value="";$("pc").value="";render()};
